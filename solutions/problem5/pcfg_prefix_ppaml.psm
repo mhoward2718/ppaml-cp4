@@ -1,0 +1,26 @@
+nonterminal(s).
+nonterminal(x).
+nonterminal(y).
+nonterminal(z).
+
+values(s,[[x,y],[y,z],[x,z],[z,x]]).
+values(x,[[a],[b],[s]]).
+values(y,[[b],[c],[d]]).
+values(z,[[d],[e],[s]]).
+
+:- set_sw(s,[0.25,0.2,0.4,0.15]).
+:- set_sw(x,[0.05,0.3,0.65]).
+:- set_sw(y,[0.5,0.3,0.2]).
+:- set_sw(z,[0.35,0.1,0.55]). 
+
+:- set_prism_flag(error_on_cycle,off).
+prefix_pcfg(L):- prefix_pcfg([s],L,[]). 
+prefix_pcfg([A|R],L0,L2):-
+	( get_values(A,_) -> msw(A,RHS),
+		prefix_pcfg(RHS,L0,L1)
+	; L0=[A|L1] ),
+	( L1=[] -> L2=[]
+	; prefix_pcfg(R,L1,L2) ).
+prefix_pcfg([],L1,L1).
+
+

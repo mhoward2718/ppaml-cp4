@@ -1,0 +1,27 @@
+nonterminal(s).
+nonterminal(x).
+nonterminal(y).
+nonterminal(z).
+
+values(s,[[x,y],[y,z],[x,z],[z,x]]).
+values(x,[[a],[b],[s]]).
+values(y,[[b],[c],[d]]).
+values(z,[[d],[e],[s]]).
+
+:- set_sw(s,[0.25,0.2,0.4,0.15]).
+:- set_sw(x,[0.05,0.3,0.65]).
+:- set_sw(y,[0.5,0.3,0.2]).
+:- set_sw(z,[0.35,0.1,0.55]). 
+
+:- p_not_table proj/2.
+pcfg(L):- pcfg(s,L-[]).
+
+pcfg(LHS,L0-L1):-
+( nonterminal(LHS) -> msw(LHS,RHS),proj(RHS,L0-L1)
+; L0 = [LHS|L1]
+).
+proj([],L-L).
+proj([X|Xs],L0-L1):-
+pcfg(X,L0-L2),proj(Xs,L2-L1).
+
+
