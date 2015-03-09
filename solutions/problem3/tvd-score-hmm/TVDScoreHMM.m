@@ -31,7 +31,7 @@ function TVDScoreHMM(numStates, numSteps, groundPath, inputPath, outputPath)
     diff = abs(ground - input);
     diff = sum(diff,2);
     meanDiff = mean(diff);
-    varDiff = var(diff);
+    varDiff = var(diff,1);
     
     %% print the scores in CSV
     diff(numSteps+1) = meanDiff;
