@@ -53,7 +53,7 @@ Metric 2: Total variation distance between the computed posterior
 and the correct posterior over $w$.
 
 
-\section*{Details}
+\section*{Details:}
 
 The file ``problem-1-generator.R'' contains R code to generate the
 true regression coefficients and the input training data. The model
@@ -98,5 +98,18 @@ distribution:
 \int_{w}\left|P\left(\hat{w}|D\right)-P_{\mbox{true}}\left(\hat{w}|D\right)\right|dw
 \]
 \end{enumerate}
+
+\subsection*{Submission:}
+The metric value should be computed for each elapsed time step (by calling the provided code or by implementing yourself). The metric value should be reported for several elapsed time steps. The number of elapsed time steps should be sufficient to establish an ``informative profile".
+
+
+For further details regarding submission of the metric and your code, please refer to the main CP4 problem description document, e.g. PPAML-Challenge-Problem-4.pdf.
+
+
+Sample output for this problem has been provided in the ``sampleoutput" folder:
+
+problem-1-query-1-metric-1.csv\\
+problem-1-query-1-metric-2.csv
+
 
 \end{document}
