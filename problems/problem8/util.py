@@ -45,7 +45,7 @@ from collections import namedtuple
 # the Physics object represents the underlying physics of the problem which
 # is generated once for all episodes
 Physics = namedtuple("Physics", [
-  "T", "R", "lambda_e", "mu_m", "theta_m", "mu_d0", "mu_d1", "mu_d2",
+  "T", "R", "lambda_e", "mu_m", "theta_m", "gamma_m", "mu_d0", "mu_d1", "mu_d2",
   "mu_t", "theta_t", "mu_z", "theta_z", "mu_s", "theta_s",
   "mu_a0", "mu_a1", "mu_a2", "sigma_a",
   "lambda_f", "mu_f", "theta_f",

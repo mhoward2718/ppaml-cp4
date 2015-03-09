@@ -12,6 +12,12 @@
 \usepackage{mathtools}
 \usepackage{url}
 \usepackage{siunitx}
+\usepackage{listings}
+\lstset{
+basicstyle=\small\ttfamily,
+columns=flexible,
+breaklines=true
+}
 
 %% I am embedding the bibliography in the latex file for simplicity !!
 
@@ -224,6 +230,8 @@ the set of false detections in an episode,
 \end{align*}
 
 \section{Hyperpriors and Constants}
+
+\label{sec-hyperprior}
 
 \begin{align*}
 T & = 3600 \, s \\
@@ -529,6 +537,149 @@ b$) has the probability density
 \[ \text{Uniform}(x \ | \ a, \ b) = \frac{1}{b - a} \ \mathbb{1}_{x>a}
 \mathbb{1}_{x<b}\, ,\]
 defined over all $x \in \mathbb{R}$.
+
+\section{Supplied Python Scripts}
+
+All of the supplied scripts are briefly described in the provided {\tt
+  README.txt} file. Here is a more detailed description.
+
+\subsection{generate.py}
+
+This script first draws a sample from the hyperpriors. This sample
+represents the physics of a hypothetical earth.  Next it samples a
+number of episodes of seismic events and detections based on this
+underlying physics. The episodes are divided into two sets, one for
+training and the other for testing, and then saved. The test episodes
+are further stripped of all events and associations and saved in the
+blind test file. The arguments to the script are as follows.
+\begin{itemize}
+\item The number of episodes to sample for each of the training and test
+  files.
+\item The file name to save the physics.
+\item The file name to save the training data.
+\item The file name to save the test data.
+\item The file name to save the blind test data.
+\end{itemize}
+The following sample output is generated when the script is run. First
+we create a directory to save the data, and then invoke {\tt
+  generate.py}.
+\begin{lstlisting}
+$> mkdir data
+
+$> ./generate.py 100 data/physics.data data/training.data data/test.data data/test.blind
+263 events generated
+58.9 % events have at least two detections
+316 events generated
+57.9 % events have at least two detections
+
+$> ls data
+physics.data  test.blind  test.data  training.data
+\end{lstlisting}
+The format of the {\tt physics.data} is very simple. It simple lists
+each attribute of the physics in the order specified in
+Section~\ref{sec-hyperprior} followed by an equal sign and the value as
+represented in Python. For example, the following are the first few
+lines of this file.
+\begin{lstlisting}
+T = 3600
+R = 6371
+lambda_e = 2.44749420963e-12
+mu_m = 3.0
+theta_m = 4.0
+gamma_m = 6.0
+mu_d0 = [-15.525711059357944, -13.02388685474455, -7.7621843877940453, -11.133601793604004, -4.3077944888906963, -6.4595999202909073, -6.0893863902811285, -11.5243613488537, -10.974148036814023, -13.319638578401111]
+\end{lstlisting}
+
+\subsection{util.py}
+This script has a number of utilities that are described below.
+\begin{itemize}
+\item {\tt compute\_travel\_time} is the function $I_T$.
+\item {\tt compute\_slowness} is the function $I_S$.
+\item {\tt invert\_slowness} is the function $I_S^{-1}$.
+\item {\tt write\_namedtuple} writes out a Python {\em named tuple} to
+  file. This is used to write the physics out to file.
+\item {\tt read\_namedtuple} clearly reads a Python {\em named tuple}
+  from file. This function is handy to read the physics data.
+\item {\tt write\_episodes} writes out a list of episodes to file.
+\item {\tt write\_single\_episode} writes out a single episode to an
+  existing file stream.
+\item {\tt read\_episodes} reads a list of episodes from a file.
+\item {\tt iterate\_episodes} sets up a Python iterator for iterating
+  episodes in a file.
+\item {\tt compute\_distance} is the $dist$ function.
+\item {\tt compute\_azimuth} is the $G_z$ function.
+\item {\tt invert\_dist\_azimuth} computes a location by traveling a
+  certain amount of distance in a given azimuth from a fixed
+  location. This problem is also called {\em reckoning}. The use of this
+  function is critical to the sample solver.
+\item {\tt compute\_degdiff} is the $\psi$ function.
+\item {\tt mvar\_norm\_fit} for fitting data to a multivariate normal.
+\item {\tt mvar\_norm\_sample} for sampling from a multivariate
+  normal. This function is used in {\tt generate.py} to generate the
+  detection probability coefficient, for example.
+\end{itemize}
+
+\subsection{solve.py}
+
+This sample solver is in a very rudimentary stage as of this
+writing. This version cheats by looking directly at the physics rather
+than learning the physics from the training data. The arguments to the
+script are as follows.
+\begin{itemize}
+\item The name of the physics data file.
+\item The name of the blind data file.
+\item The name of the file where the solutions are to be written out.
+\end{itemize}
+Here is a sample
+command to run this script.
+\begin{verbatim}
+$> ./solve.py data/physics.data data/test.blind data/test.solution
+\end{verbatim}
+The script keeps printing out to the terminal the events that it has
+located while populating the solution file as well. The solution file is
+flushed at the end of each episode.
+
+A brief summary of the algorithm is as follows. For each detection we
+invert the slowness to get a distance estimate. Next invert the distance
+estimate and azimuth to get a potential event location, and finally the
+event time and magnitude is computed from the location. Now, repeat this
+process with perturbed slowness and azimuth values to get a number of
+candidates events from each detection. A large number of candidates, roughly a
+hundred from each detection, is thus generated. A candidate is assigned
+a score by attempting to associate the best set of detections from the
+available pool. An event score is the log likelihood ratio of the
+associated detections being generated by the event versus the same
+detections being generated by noise.
+
+Once a best candidate is identified, its associated detections are
+removed from the pool and the process is repeated. Once the score of a
+candidate event is below a threshold the process stops.
+
+Of course, this algorithm makes a number of simplifications. For example,
+it ignores the event prior and doesn't consider splitting or merging
+events. Please refer to \cite{Arora2013} for the actual deployed
+algorithm.
+
+\subsection{evaluate.py}
+This script takes only two arguments. The data file with the correct
+bulletin, the so-called {\em gold} data, and the guess data file. The
+guess file could have fewer episodes than the gold data. In this case
+only the episodes in the guess data file are evaluated. Here is a sample
+output from the script.
+\begin{lstlisting}
+$> ./evaluate.py data/test.data data/test.solution 
+Guess data has fewer episodes than gold data!!
+115 matchable events, 147 guess events, and 84 matched
+Precision 57.1 % , Recall 73.0 % , F1 64.1
+Time Errors mean 6.7 std 5.6
+Dist Errors mean 1.4 std 0.9
+Mag Errors mean 0.2 std 0.1
+\end{lstlisting}
+
+\subsection{mwmatching.py}
+
+This utlity script implements a max-weight max cardinality matching
+algorithm that is used for the evaluation.
 
 \end{appendices}
 

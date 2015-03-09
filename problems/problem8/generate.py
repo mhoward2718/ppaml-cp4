@@ -17,7 +17,8 @@ import sys
 
 from scipy.stats import gamma, norm, invgamma, poisson, uniform, expon,\
      bernoulli, laplace, cauchy
-from numpy import array, sqrt, log, exp, pi, arcsin, degrees
+from numpy import array, sqrt, log, exp, pi, arcsin, degrees, seterr
+seterr(all='raise')
 from collections import namedtuple
 
 from util import *
@@ -76,6 +77,7 @@ def sample_physics():
   # event magnitude
   mu_m = 3.0
   theta_m = 4.0
+  gamma_m = 6.0
 
   # Note: the correct choice of theta_m should be 0.75.
   # We have chosen a large value here to force larger events and hence
@@ -128,7 +130,7 @@ def sample_physics():
     mu_f.append(norm.rvs(-0.68, 0.68))
     theta_f.append(invgamma.rvs(23.5, 0, 12.45))
     
-  return Physics(T, R, lambda_e, mu_m, theta_m, mu_d0, mu_d1, mu_d2,
+  return Physics(T, R, lambda_e, mu_m, theta_m, gamma_m, mu_d0, mu_d1, mu_d2,
                  mu_t, theta_t, mu_z, theta_z, mu_s, theta_s,
                  mu_a0, mu_a1, mu_a2, sigma_a,
                  lambda_f, mu_f, theta_f)
@@ -159,8 +161,9 @@ def sample_episodes(numepisodes, physics):
       # magnitude has an exponential distribution as per Gutenberg-Richter law
       while True:
         evmag = expon.rvs(physics.mu_m, physics.theta_m)
-        # magnitude saturates at 6
-        if evmag > 6.0:
+        # magnitude saturates at some maximum value,
+        # re-sample if we exceed the max
+        if evmag > physics.gamma_m:
           continue
         else:
           break
@@ -234,15 +237,13 @@ def sample_episodes(numepisodes, physics):
 
         while True:
           # resample if the detection amplitude is infinite
-          detamp = exp(cauchy.rvs(physics.mu_f[stanum],
-                                  physics.theta_f[stanum]))
-
-          if np.isinf(detamp):
+          try:
+            detamp = exp(cauchy.rvs(physics.mu_f[stanum],
+                                    physics.theta_f[stanum]))
+          except FloatingPointError:
             continue
           
-          else:
-            break
-          
+          break
         
         detections.append(Detection(stanum, dettime, detaz, detslow, detamp))
         
