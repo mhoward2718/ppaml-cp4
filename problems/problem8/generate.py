@@ -17,7 +17,7 @@ import sys
 
 from scipy.stats import gamma, norm, invgamma, poisson, uniform, expon,\
      bernoulli, laplace, cauchy
-from numpy import array, sqrt, log, exp, pi, arcsin, degrees, seterr
+from numpy import array, sqrt, log, exp, pi, arcsin, degrees, seterr, isinf
 seterr(all='raise')
 from collections import namedtuple
 
@@ -209,11 +209,22 @@ def sample_episodes(numepisodes, physics):
             detslow = laplace.rvs(compute_slowness(dist) + physics.mu_s[stanum],
                                   physics.theta_s[stanum])
 
-            detamp = exp(norm.rvs(physics.mu_a0[stanum]
-                                  + physics.mu_a1[stanum] * event.mag
-                                  + physics.mu_a2[stanum] * dist,
-                                  physics.sigma_a[stanum]))
+            while True:
+              # resample if the detection amplitude is infinite
+              try:
+                detamp = exp(norm.rvs(physics.mu_a0[stanum]
+                                      + physics.mu_a1[stanum] * event.mag
+                                      + physics.mu_a2[stanum] * dist,
+                                      physics.sigma_a[stanum]))
 
+              except FloatingPointError:
+                continue
+              
+              # disallow zero or infinite amplitudes
+              if detamp == 0 or isinf(detamp):
+                continue
+              break
+            
             truedets.append(len(detections))
             detections.append(Detection(stanum, dettime, detaz, detslow,
                                         detamp))
@@ -243,6 +254,9 @@ def sample_episodes(numepisodes, physics):
           except FloatingPointError:
             continue
           
+          # disallow zero or infinite amplitudes
+          if detamp == 0 or isinf(detamp):
+            continue
           break
         
         detections.append(Detection(stanum, dettime, detaz, detslow, detamp))
