@@ -26,6 +26,9 @@ short_data/ or large_data/
  test.data        -- another 10K episodes for testing
  test.blind       -- the test data with the event-to-detection mapping omitted
  test.solution    -- a sample solution on the test data (not available yet)
+ 
+The data files needed for the PPAML CP4 challenge problem are located here:
+http://ppaml.kitware.com/midas/item/4543 
 
 Overview
 ========
