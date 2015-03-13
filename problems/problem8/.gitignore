@@ -1,0 +1,16 @@
+build/
+*.so
+large_data/
+short_data/
+NOTES.txt
+*.pdf
+*.bbl
+*.bib
+*.pyc
+*.aux
+*.blg
+*.out
+*.fdb_latexmk
+*.fls
+*.log
+
